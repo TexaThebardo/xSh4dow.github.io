@@ -1,0 +1,824 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Gabriel - Profile Card</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+:root {
+  --primary: #ff0033;
+  --primary-light: #ff4d6d;
+  --bg-dark: #06060a;
+  --bg-card: rgba(20, 20, 30, 0.85);
+  --text-light: #bbb;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+}
+
+body {
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-dark);
+  color: #fff;
+}
+
+/* ===== PANTALLA DE CARGA ===== */
+#loaderScreen {
+  position: fixed;
+  inset: 0;
+  background: linear-gradient(135deg, #0a0a14 0%, #151525 50%, #0a0a14 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  transition: opacity 0.8s ease, visibility 0.8s ease;
+}
+
+.loader-content {
+  text-align: center;
+  padding: 30px;
+}
+
+.loader-spinner {
+  width: 70px;
+  height: 70px;
+  margin: 0 auto 20px;
+  position: relative;
+}
+
+.spinner-circle {
+  width: 100%;
+  height: 100%;
+  border: 3px solid transparent;
+  border-top: 3px solid var(--primary);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.spinner-circle::after {
+  content: '';
+  position: absolute;
+  top: 5px;
+  left: 5px;
+  right: 5px;
+  bottom: 5px;
+  border: 3px solid transparent;
+  border-top: 3px solid var(--primary-light);
+  border-radius: 50%;
+  animation: spin 1.5s linear infinite reverse;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.loader-title {
+  font-size: 1.8rem;
+  font-weight: 700;
+  margin-bottom: 10px;
+  background: linear-gradient(45deg, #fff, var(--primary-light));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.loader-subtitle {
+  color: var(--text-light);
+  margin-bottom: 25px;
+  font-size: 0.9rem;
+}
+
+.loader-progress {
+  width: 200px;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+  overflow: hidden;
+  margin: 0 auto;
+}
+
+.loader-progress-bar {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, var(--primary), var(--primary-light));
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+
+.loader-percentage {
+  margin-top: 15px;
+  font-size: 1rem;
+  color: var(--primary-light);
+  font-weight: 600;
+}
+
+/* ===== BACKGROUND ===== */
+canvas {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+}
+
+/* ===== MAIN CARD ===== */
+.main {
+  position: relative;
+  z-index: 2;
+  width: 90%;
+  max-width: 340px;
+  padding: 28px;
+  border-radius: 22px;
+  background: var(--bg-card);
+  backdrop-filter: blur(18px);
+  box-shadow: 
+    0 0 60px rgba(255, 0, 60, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  text-align: center;
+  opacity: 0;
+  transform: translateY(40px) scale(0.95);
+  transition: all 1.2s ease;
+}
+
+.main.show {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+/* ===== PROFILE ===== */
+.avatar {
+  width: 130px;
+  height: 130px;
+  border-radius: 50%;
+  margin: 0 auto 20px;
+  overflow: hidden;
+  border: 3px solid #fff;
+  box-shadow: 0 0 35px var(--primary);
+  animation: float 4s ease-in-out infinite;
+  position: relative;
+}
+
+.avatar::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  background: linear-gradient(45deg, var(--primary), #00f3ff, var(--primary));
+  border-radius: 50%;
+  z-index: -1;
+  animation: rotate 3s linear infinite;
+}
+
+.avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+@keyframes rotate {
+  100% { transform: rotate(360deg); }
+}
+
+/* ===== STATS ===== */
+.stats {
+  display: flex;
+  justify-content: center;
+  gap: 18px;
+  margin: 16px 0 24px;
+}
+
+.stat {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  border-radius: 14px;
+  background: rgba(0, 0, 0, 0.55);
+  cursor: pointer;
+  box-shadow: 0 0 15px rgba(255, 0, 60, 0.6);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  user-select: none;
+  min-width: 80px;
+  justify-content: center;
+}
+
+.stat:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 0 25px rgba(255, 0, 60, 0.8);
+}
+
+.stat.liked {
+  animation: likeGlow 0.6s ease;
+}
+
+.stat .material-icons {
+  font-size: 20px;
+}
+
+@keyframes likeGlow {
+  0% { box-shadow: 0 0 10px var(--primary); }
+  50% { box-shadow: 0 0 40px var(--primary-light); }
+  100% { box-shadow: 0 0 15px var(--primary); }
+}
+
+h1 {
+  margin: 10px 0 4px;
+  font-size: 24px;
+  font-weight: 700;
+  background: linear-gradient(45deg, #fff, var(--primary-light));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+p {
+  margin: 0 0 24px;
+  color: var(--text-light);
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+/* ===== BUTTONS ===== */
+.btn {
+  width: 100%;
+  padding: 16px;
+  margin: 12px 0;
+  border: none;
+  border-radius: 16px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  color: #fff;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  letter-spacing: 0.5px;
+}
+
+.btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(120deg, transparent, rgba(255, 255, 255, 0.35), transparent);
+  transform: translateX(-100%);
+  transition: transform 1.2s;
+}
+
+.btn:hover::before {
+  animation: shine 1.2s;
+}
+
+.btn:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.6);
+}
+
+.btn:active {
+  transform: translateY(-1px);
+}
+
+@keyframes shine {
+  to { transform: translateX(100%); }
+}
+
+.discord {
+  background: linear-gradient(135deg, #5865f2, #404eed);
+}
+
+.instagram {
+  background: linear-gradient(135deg, #833ab4, #fd1d1d, #f77737);
+}
+
+.tiktok {
+  background: linear-gradient(135deg, #000, #333);
+}
+
+.script {
+  background: linear-gradient(135deg, var(--primary), #7a0018);
+}
+
+/* ===== MUSIC BUTTON ===== */
+#musicBtn {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  width: 55px;
+  height: 55px;
+  border-radius: 50%;
+  border: none;
+  background: var(--primary);
+  color: #fff;
+  cursor: pointer;
+  box-shadow: 0 0 25px var(--primary);
+  z-index: 5;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#musicBtn:hover {
+  transform: scale(1.1);
+  box-shadow: 0 0 35px var(--primary-light);
+}
+
+#musicBtn.playing {
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { box-shadow: 0 0 25px var(--primary); }
+  50% { box-shadow: 0 0 40px var(--primary-light); }
+}
+
+/* ===== NOTIFICATION ===== */
+.notification {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: rgba(20, 20, 30, 0.95);
+  color: white;
+  padding: 12px 20px;
+  border-radius: 10px;
+  border-left: 4px solid var(--primary);
+  backdrop-filter: blur(10px);
+  z-index: 10000;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+  max-width: 300px;
+  font-size: 14px;
+  transform: translateX(120%);
+  transition: transform 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.notification.show {
+  transform: translateX(0);
+}
+
+.notification.success {
+  border-left-color: #4CAF50;
+}
+
+.notification.error {
+  border-left-color: #f44336;
+}
+
+.notification.info {
+  border-left-color: #2196F3;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 480px) {
+  .main {
+    padding: 20px;
+    margin: 20px;
+  }
+  
+  .loader-content {
+    padding: 20px;
+  }
+  
+  .loader-title {
+    font-size: 1.5rem;
+  }
+  
+  .stats {
+    gap: 12px;
+  }
+  
+  .stat {
+    padding: 8px 14px;
+    min-width: 70px;
+  }
+  
+  .btn {
+    padding: 14px;
+  }
+  
+  #musicBtn {
+    width: 50px;
+    height: 50px;
+    bottom: 15px;
+    right: 15px;
+  }
+  
+  .notification {
+    right: 10px;
+    left: 10px;
+    max-width: none;
+  }
+}
+
+@media (max-width: 360px) {
+  .stats {
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .stat {
+    width: 100%;
+    max-width: 180px;
+  }
+}
+</style>
+</head>
+<body>
+
+<!-- Pantalla de carga -->
+<div id="loaderScreen">
+  <div class="loader-content">
+    <div class="loader-spinner">
+      <div class="spinner-circle"></div>
+    </div>
+    <h2 class="loader-title">Cargando Perfil</h2>
+    <p class="loader-subtitle">Preparando tu experiencia personalizada</p>
+    
+    <div class="loader-progress">
+      <div class="loader-progress-bar" id="progressBar"></div>
+    </div>
+    
+    <div class="loader-percentage" id="percentage">0%</div>
+  </div>
+</div>
+
+<!-- Canvas para partículas -->
+<canvas id="bg"></canvas>
+
+<!-- Botón de música -->
+<button id="musicBtn" aria-label="Toggle music">
+  <span class="material-icons">music_note</span>
+</button>
+
+<!-- Tarjeta principal -->
+<div class="main" id="main">
+  <div class="avatar">
+    <img src="https://i.imgur.com/4ZQZ4ZQ.jpg" alt="Profile Picture" loading="lazy">
+  </div>
+  
+  <div class="stats">
+    <div class="stat" id="likeBtn" role="button" aria-label="Like profile">
+      <span class="material-icons" aria-hidden="true">favorite</span>
+      <span id="likeCount">0</span>
+    </div>
+    <div class="stat" id="viewStat">
+      <span class="material-icons" aria-hidden="true">visibility</span>
+      <span id="viewCount">1</span>
+    </div>
+  </div>
+  
+  <h1>Gabriel</h1>
+  <p>Content Creator & Developer</p>
+  
+  <button class="btn discord" id="discordBtn" aria-label="Join Discord">
+    <span class="material-icons" aria-hidden="true">diversity_3</span>
+    Join Discord
+  </button>
+  
+  <button class="btn instagram" id="instagramBtn" aria-label="Follow on Instagram">
+    <span class="material-icons" aria-hidden="true">camera_alt</span>
+    Follow me IG
+  </button>
+  
+  <button class="btn tiktok" id="tiktokBtn" aria-label="Follow on TikTok">
+    <span class="material-icons" aria-hidden="true">video_library</span>
+    Follow me TikTok
+  </button>
+  
+  <button class="btn script" id="scriptBtn" aria-label="Copy script">
+    <span class="material-icons" aria-hidden="true">content_copy</span>
+    Get NYX Script
+  </button>
+</div>
+
+<script>
+'use strict';
+
+// ===== VARIABLES GLOBALES =====
+const loader = document.getElementById('loaderScreen');
+const main = document.getElementById('main');
+const musicBtn = document.getElementById('musicBtn');
+const likeBtn = document.getElementById('likeBtn');
+const likeCount = document.getElementById('likeCount');
+const viewCount = document.getElementById('viewCount');
+const progressBar = document.getElementById('progressBar');
+const percentage = document.getElementById('percentage');
+
+// Botones de redes sociales
+const discordBtn = document.getElementById('discordBtn');
+const instagramBtn = document.getElementById('instagramBtn');
+const tiktokBtn = document.getElementById('tiktokBtn');
+const scriptBtn = document.getElementById('scriptBtn');
+
+let liked = false;
+let isMusicPlaying = false;
+let loadProgress = 0;
+
+// ===== PANTALLA DE CARGA =====
+function startLoading() {
+  const interval = setInterval(() => {
+    loadProgress += Math.random() * 10 + 5;
+    if (loadProgress > 100) {
+      loadProgress = 100;
+      clearInterval(interval);
+      
+      setTimeout(() => {
+        loader.style.opacity = '0';
+        setTimeout(() => {
+          loader.style.display = 'none';
+          main.classList.add('show');
+          animateCounter(viewCount, 1, 200);
+          showNotification('¡Bienvenido a mi perfil!', 'info');
+        }, 300);
+      }, 500);
+    }
+    
+    progressBar.style.width = loadProgress + '%';
+    percentage.textContent = Math.floor(loadProgress) + '%';
+  }, 150);
+}
+
+// ===== MÚSICA CON SPOTIFY EMBEBIDO =====
+function initMusic() {
+  // Crear iframe de Spotify
+  const spotifyIframe = document.createElement('iframe');
+  spotifyIframe.id = 'spotifyPlayer';
+  spotifyIframe.style.cssText = 'position: fixed; width: 0; height: 0; border: 0; display: none;';
+  spotifyIframe.src = 'https://open.spotify.com/embed/track/2yhs4Kqr46kKUkuTIAfrCm';
+  document.body.appendChild(spotifyIframe);
+  
+  // Crear botón de música funcional
+  musicBtn.addEventListener('click', toggleMusic);
+  
+  console.log('Música de Spotify configurada');
+}
+
+function toggleMusic() {
+  if (!isMusicPlaying) {
+    // Abrir Spotify en nueva pestaña
+    window.open('https://open.spotify.com/track/2yhs4Kqr46kKUkuTIAfrCm', '_blank');
+    
+    // Mostrar estado de reproducción
+    isMusicPlaying = true;
+    musicBtn.classList.add('playing');
+    musicBtn.querySelector('.material-icons').textContent = 'music_off';
+    showNotification('🎵 Abriendo Nueva York blessed en Spotify', 'info');
+  } else {
+    isMusicPlaying = false;
+    musicBtn.classList.remove('playing');
+    musicBtn.querySelector('.material-icons').textContent = 'music_note';
+    showNotification('⏸️ Música pausada', 'info');
+  }
+}
+
+// ===== NOTIFICACIONES =====
+function showNotification(message, type = 'info') {
+  const notification = document.createElement('div');
+  notification.className = `notification ${type}`;
+  
+  // Icono según tipo
+  let icon = 'info';
+  if (type === 'success') icon = 'check_circle';
+  if (type === 'error') icon = 'error';
+  if (type === 'info') icon = 'info';
+  
+  notification.innerHTML = `
+    <span class="material-icons">${icon}</span>
+    <span>${message}</span>
+  `;
+  
+  document.body.appendChild(notification);
+  
+  setTimeout(() => notification.classList.add('show'), 10);
+  
+  setTimeout(() => {
+    notification.classList.remove('show');
+    setTimeout(() => notification.remove(), 300);
+  }, 3000);
+}
+
+// ===== ANIMACIÓN DE CONTADORES =====
+function animateCounter(element, target, duration) {
+  let current = 0;
+  const increment = target > 0 ? 1 : -1;
+  const stepTime = Math.abs(Math.floor(duration / target));
+  
+  const timer = setInterval(() => {
+    current += increment;
+    element.textContent = current;
+    
+    if (current === target) {
+      clearInterval(timer);
+    }
+  }, stepTime);
+}
+
+// ===== FUNCIONALIDAD DE LIKE =====
+likeBtn.addEventListener('click', () => {
+  if (liked) return;
+  
+  liked = true;
+  likeBtn.classList.add('liked');
+  animateCounter(likeCount, 1, 300);
+  likeBtn.style.pointerEvents = 'none';
+  likeBtn.title = '¡Ya te gusta!';
+  showNotification('❤️ ¡Gracias por el like!', 'success');
+});
+
+// ===== REDES SOCIALES - FUNCIONALIDAD CORREGIDA =====
+discordBtn.addEventListener('click', function(e) {
+  e.preventDefault();
+  console.log('Abriendo Discord...');
+  window.open('https://discord.gg/F3SDzkZa6U', '_blank', 'noopener,noreferrer');
+  showNotification('Abriendo Discord...', 'info');
+});
+
+instagramBtn.addEventListener('click', function(e) {
+  e.preventDefault();
+  console.log('Abriendo Instagram...');
+  window.open('https://www.instagram.com/gzbriel_23/', '_blank', 'noopener,noreferrer');
+  showNotification('Abriendo Instagram...', 'info');
+});
+
+tiktokBtn.addEventListener('click', function(e) {
+  e.preventDefault();
+  console.log('Abriendo TikTok...');
+  window.open('https://www.tiktok.com/@gxbriel51x?_r=1&_t=ZS-92pyVA67Lnu', '_blank', 'noopener,noreferrer');
+  showNotification('Abriendo TikTok...', 'info');
+});
+
+// ===== COPIAR SCRIPT - FUNCIONALIDAD CORREGIDA =====
+scriptBtn.addEventListener('click', async function(e) {
+  e.preventDefault();
+  const script = "loadstring(game:HttpGet('https://raw.githubusercontent.com/TexaThebardo/NYXEXOTIC/refs/heads/main/UpdateFix.lua'))()";
+  
+  try {
+    await navigator.clipboard.writeText(script);
+    
+    // Cambiar temporalmente el botón
+    const originalHTML = scriptBtn.innerHTML;
+    scriptBtn.innerHTML = '<span class="material-icons">check</span> ¡Copiado!';
+    scriptBtn.style.background = 'linear-gradient(135deg, #00b09b, #96c93d)';
+    
+    showNotification('✅ Script copiado al portapapeles', 'success');
+    
+    setTimeout(() => {
+      scriptBtn.innerHTML = originalHTML;
+      scriptBtn.style.background = 'linear-gradient(135deg, var(--primary), #7a0018)';
+    }, 2000);
+    
+  } catch (err) {
+    console.error('Error al copiar:', err);
+    
+    // Método alternativo para navegadores antiguos
+    const textArea = document.createElement('textarea');
+    textArea.value = script;
+    document.body.appendChild(textArea);
+    textArea.select();
+    
+    try {
+      const successful = document.execCommand('copy');
+      if (successful) {
+        showNotification('✅ Script copiado (método alternativo)', 'success');
+      } else {
+        showNotification('❌ Error al copiar el script', 'error');
+      }
+    } catch (copyErr) {
+      showNotification('❌ Error: No se pudo copiar', 'error');
+    }
+    
+    document.body.removeChild(textArea);
+  }
+});
+
+// ===== FONDO DE PARTÍCULAS =====
+const canvas = document.getElementById('bg');
+const ctx = canvas.getContext('2d');
+let particles = [];
+
+function resizeCanvas() {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  initParticles();
+}
+
+function initParticles() {
+  particles = [];
+  const count = Math.min(60, Math.floor((canvas.width * canvas.height) / 15000));
+  
+  for (let i = 0; i < count; i++) {
+    particles.push({
+      x: Math.random() * canvas.width,
+      y: Math.random() * canvas.height,
+      size: Math.random() * 2 + 1,
+      speedX: (Math.random() - 0.5) * 0.5,
+      speedY: (Math.random() - 0.5) * 0.5,
+      color: `rgba(255, 0, 60, ${Math.random() * 0.5 + 0.3})`
+    });
+  }
+}
+
+function animateParticles() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  
+  particles.forEach(p => {
+    p.x += p.speedX;
+    p.y += p.speedY;
+    
+    if (p.x < 0 || p.x > canvas.width) p.speedX *= -1;
+    if (p.y < 0 || p.y > canvas.height) p.speedY *= -1;
+    
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+    ctx.fillStyle = p.color;
+    ctx.fill();
+    
+    particles.forEach(other => {
+      const dx = p.x - other.x;
+      const dy = p.y - other.y;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+      
+      if (distance < 100) {
+        ctx.beginPath();
+        ctx.strokeStyle = `rgba(255, 0, 60, ${0.2 * (1 - distance/100)})`;
+        ctx.lineWidth = 0.5;
+        ctx.moveTo(p.x, p.y);
+        ctx.lineTo(other.x, other.y);
+        ctx.stroke();
+      }
+    });
+  });
+  
+  requestAnimationFrame(animateParticles);
+}
+
+// ===== INICIALIZACIÓN =====
+window.addEventListener('load', () => {
+  console.log('✅ Página cargada - Inicializando...');
+  startLoading();
+  initMusic();
+  
+  // Inicializar canvas
+  resizeCanvas();
+  animateParticles();
+  
+  // Verificar que los botones funcionen
+  console.log('Discord botón:', discordBtn ? 'OK' : 'ERROR');
+  console.log('Instagram botón:', instagramBtn ? 'OK' : 'ERROR');
+  console.log('TikTok botón:', tiktokBtn ? 'OK' : 'ERROR');
+  console.log('Script botón:', scriptBtn ? 'OK' : 'ERROR');
+});
+
+window.addEventListener('resize', resizeCanvas);
+
+// Atajos de teclado
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'm' || e.key === 'M') {
+    musicBtn.click();
+  }
+  if (e.key === '1') {
+    discordBtn.click();
+  }
+  if (e.key === '2') {
+    instagramBtn.click();
+  }
+  if (e.key === '3') {
+    tiktokBtn.click();
+  }
+  if (e.key === '4') {
+    scriptBtn.click();
+  }
+});
+
+// Mensajes de consola para depuración
+console.log('✨ Perfil de Gabriel - Todo funcional');
+console.log('🔗 Enlaces:');
+console.log('  - Discord: https://discord.gg/F3SDzkZa6U');
+console.log('  - Instagram: https://www.instagram.com/gzbriel_23/');
+console.log('  - TikTok: https://www.tiktok.com/@gxbriel51x');
+console.log('  - Script: loadstring(game:HttpGet(...))');
+console.log('🎵 Música: Nueva York blessed en Spotify');
+console.log('🎮 Atajos de teclado: M (música), 1-4 (botones)');
+</script>
+</body>
+</html>
