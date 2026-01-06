@@ -570,9 +570,7 @@ p {
 
 <!-- Audio Player -->
 <audio id="backgroundMusic" loop>
-  <!-- Música de Nueva York blessed - Usando un servicio de streaming -->
   <source src="https://audio.jukehost.co.uk/bOMm0g6obWgEW1W9eumkh98v6xSfNw1O" type="audio/mpeg">
-  <!-- Backup alternativo -->
   <source src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_1f2c02db5a.mp3" type="audio/mpeg">
 </audio>
 
@@ -636,28 +634,6 @@ p {
 <script>
 'use strict';
 
-// ===== CONFIGURACIÓN FIREBASE =====
-const firebaseConfig = {
-  apiKey: "AIzaSyDEXAMPLEKEY1234567890",
-  authDomain: "gabriel-profile-stats.firebaseapp.com",
-  databaseURL: "https://gabriel-profile-stats-default-rtdb.firebaseio.com",
-  projectId: "gabriel-profile-stats",
-  storageBucket: "gabriel-profile-stats.appspot.com",
-  messagingSenderId: "123456789012",
-  appId: "1:123456789012:web:abcdef1234567890"
-};
-
-// Inicializar Firebase
-let database;
-try {
-  firebase.initializeApp(firebaseConfig);
-  database = firebase.database();
-  console.log("✅ Firebase inicializado");
-} catch (error) {
-  console.log("⚠️ Firebase no disponible, usando localStorage");
-  database = null;
-}
-
 // ===== VARIABLES GLOBALES =====
 const loader = document.getElementById('loaderScreen');
 const main = document.getElementById('main');
@@ -683,52 +659,33 @@ let loadProgress = 0;
 let views = 0;
 let likes = 0;
 let hasLiked = false;
+let loadingInterval = null;
 
-// ===== FUNCIONES DE FIREBASE / LOCALSTORAGE =====
-async function loadStats() {
+// ===== FUNCIONES DE LOCALSTORAGE =====
+function loadStats() {
+  console.log("📊 Cargando estadísticas...");
+  
   try {
-    if (database) {
-      // Cargar desde Firebase
-      const statsRef = database.ref('profileStats');
-      const snapshot = await statsRef.once('value');
-      const data = snapshot.val() || { views: 0, likes: 0 };
-      
-      views = data.views || 0;
-      likes = data.likes || 0;
-      
-      // Verificar si el usuario ya dio like (por IP/cookie)
-      const userLiked = localStorage.getItem('userLiked') === 'true';
-      hasLiked = userLiked;
-      
-      console.log("📊 Estadísticas cargadas:", { views, likes, hasLiked });
-    } else {
-      // Cargar desde localStorage
-      views = parseInt(localStorage.getItem('globalViews')) || 0;
-      likes = parseInt(localStorage.getItem('globalLikes')) || 0;
-      hasLiked = localStorage.getItem('userLiked') === 'true';
-    }
+    // Cargar desde localStorage
+    views = parseInt(localStorage.getItem('globalViews')) || 158;
+    likes = parseInt(localStorage.getItem('globalLikes')) || 72;
+    hasLiked = localStorage.getItem('userLiked') === 'true';
+    
+    console.log("📊 Estadísticas cargadas:", { views, likes, hasLiked });
   } catch (error) {
     console.error("Error cargando estadísticas:", error);
     // Valores por defecto
-    views = 0;
-    likes = 0;
+    views = 158;
+    likes = 72;
     hasLiked = false;
   }
 }
 
-async function incrementViews() {
+function incrementViews() {
   views++;
   
   try {
-    if (database) {
-      // Guardar en Firebase
-      await database.ref('profileStats').update({ views: views });
-    } else {
-      // Guardar en localStorage
-      localStorage.setItem('globalViews', views.toString());
-    }
-    
-    // Actualizar contador en pantalla
+    localStorage.setItem('globalViews', views.toString());
     viewCount.textContent = formatNumber(views);
     console.log("👁️ Vista registrada. Total:", views);
   } catch (error) {
@@ -736,28 +693,17 @@ async function incrementViews() {
   }
 }
 
-async function incrementLikes() {
-  if (hasLiked) return;
+function incrementLikes() {
+  if (hasLiked) return false;
   
   likes++;
   hasLiked = true;
   
   try {
-    if (database) {
-      // Guardar en Firebase
-      await database.ref('profileStats').update({ likes: likes });
-    } else {
-      // Guardar en localStorage
-      localStorage.setItem('globalLikes', likes.toString());
-    }
-    
-    // Guardar que este usuario ya dio like
+    localStorage.setItem('globalLikes', likes.toString());
     localStorage.setItem('userLiked', 'true');
-    
-    // Actualizar contador en pantalla
     likeCount.textContent = formatNumber(likes);
     console.log("❤️ Like registrado. Total:", likes);
-    
     return true;
   } catch (error) {
     console.error("Error incrementando likes:", error);
@@ -775,44 +721,58 @@ function formatNumber(num) {
   return num.toString();
 }
 
-// ===== PANTALLA DE CARGA =====
-async function startLoading() {
-  // Cargar estadísticas primero
-  await loadStats();
+// ===== PANTALLA DE CARGA - VERSIÓN SIMPLIFICADA Y FUNCIONAL =====
+function startLoading() {
+  console.log("🚀 Iniciando carga del perfil...");
   
-  const interval = setInterval(() => {
+  // Cargar estadísticas primero (rápido, sincrónico)
+  loadStats();
+  
+  // Iniciar animación de progreso
+  loadingInterval = setInterval(() => {
+    // Incrementar progreso
     loadProgress += Math.random() * 10 + 5;
-    if (loadProgress > 100) {
+    
+    // Limitar a 100%
+    if (loadProgress >= 100) {
       loadProgress = 100;
-      clearInterval(interval);
-      
-      // Mostrar estadísticas cargadas
-      viewCount.textContent = formatNumber(views);
-      likeCount.textContent = formatNumber(likes);
-      
-      // Deshabilitar like si ya lo dio
-      if (hasLiked) {
-        likeBtn.classList.add('disabled');
-        likeBtn.title = 'Ya diste like';
-        liked = true;
-      }
-      
-      // Incrementar vista
-      incrementViews();
-      
-      setTimeout(() => {
-        loader.style.opacity = '0';
-        setTimeout(() => {
-          loader.style.display = 'none';
-          main.classList.add('show');
-          showNotification(`👋 Bienvenido! ${formatNumber(views)} visitas`, 'info');
-        }, 300);
-      }, 500);
+      clearInterval(loadingInterval);
+      completeLoading();
     }
     
+    // Actualizar UI
     progressBar.style.width = loadProgress + '%';
     percentage.textContent = Math.floor(loadProgress) + '%';
-  }, 150);
+  }, 120);
+}
+
+function completeLoading() {
+  console.log("✅ Carga completada al 100%");
+  
+  // Mostrar estadísticas cargadas
+  viewCount.textContent = formatNumber(views);
+  likeCount.textContent = formatNumber(likes);
+  
+  // Deshabilitar like si ya lo dio
+  if (hasLiked) {
+    likeBtn.classList.add('disabled');
+    likeBtn.title = 'Ya diste like';
+    liked = true;
+  }
+  
+  // Incrementar vista
+  incrementViews();
+  
+  // Transición suave a la tarjeta principal
+  setTimeout(() => {
+    loader.style.opacity = '0';
+    
+    setTimeout(() => {
+      loader.style.display = 'none';
+      main.classList.add('show');
+      showNotification(`👋 ¡Bienvenido! ${formatNumber(views)} visitas`, 'info');
+    }, 800);
+  }, 500);
 }
 
 // ===== SISTEMA DE MÚSICA EN FONDO =====
@@ -854,14 +814,6 @@ function initMusicSystem() {
     }
   });
   
-  // Intentar reproducir automáticamente después de interacción
-  document.addEventListener('click', function initAudio() {
-    if (!isMusicPlaying) {
-      startMusic();
-    }
-    document.removeEventListener('click', initAudio);
-  }, { once: true });
-  
   console.log("🎵 Sistema de música inicializado");
 }
 
@@ -878,17 +830,6 @@ function startMusic() {
     }).catch(error => {
       console.log("Error reproduciendo música:", error);
       showNotification('⚠️ Haz clic para activar la música', 'error');
-      
-      // Intentar de nuevo con interacción
-      document.addEventListener('click', function retryMusic() {
-        backgroundMusic.play().then(() => {
-          isMusicPlaying = true;
-          musicBtn.classList.add('playing');
-          musicBtn.querySelector('.material-icons').textContent = 'music_off';
-          localStorage.setItem('musicPlaying', 'true');
-        });
-        document.removeEventListener('click', retryMusic);
-      }, { once: true });
     });
   }
 }
@@ -943,8 +884,8 @@ likeBtn.addEventListener('click', async function() {
   // Animación
   animateCounter(likeCount, likes + 1, 300);
   
-  // Guardar like globalmente
-  const success = await incrementLikes();
+  // Guardar like
+  const success = incrementLikes();
   
   if (success) {
     showNotification(`❤️ ¡Gracias! ${formatNumber(likes + 1)} likes totales`, 'success');
@@ -1092,21 +1033,18 @@ function animateParticles() {
 }
 
 // ===== INICIALIZACIÓN =====
-window.addEventListener('load', async () => {
+window.addEventListener('load', function() {
   console.log('🚀 Inicializando perfil...');
   
   // Inicializar canvas
   resizeCanvas();
   animateParticles();
   
-  // Iniciar sistemas
-  await startLoading();
+  // Iniciar carga
+  startLoading();
   initMusicSystem();
   
-  console.log('✅ Perfil completamente cargado');
-  console.log('🎵 Música: Nueva York blessed en fondo');
-  console.log('📊 Estadísticas globales activas');
-  console.log('🔗 Enlaces funcionales');
+  console.log('✅ Script de inicialización ejecutado');
 });
 
 window.addEventListener('resize', resizeCanvas);
@@ -1115,7 +1053,7 @@ window.addEventListener('resize', resizeCanvas);
 document.addEventListener('visibilitychange', () => {
   if (document.hidden && isMusicPlaying) {
     backgroundMusic.pause();
-  } else if (!document.hidden && !backgroundMusic.paused) {
+  } else if (!document.hidden && isMusicPlaying && backgroundMusic.paused) {
     backgroundMusic.play();
   }
 });
@@ -1133,4 +1071,17 @@ document.addEventListener('keydown', (e) => {
   if (e.key === '3') tiktokBtn.click();
   if (e.key === '4') scriptBtn.click();
   if (e.key === 'l' || e.key === 'L') {
-    if (!hasLiked && !liked) likeBtn
+    if (!hasLiked && !liked) likeBtn.click();
+  }
+});
+
+// Activar música con primer clic
+document.addEventListener('click', function initAudioOnce() {
+  if (!isMusicPlaying) {
+    startMusic();
+  }
+  document.removeEventListener('click', initAudioOnce);
+}, { once: true });
+</script>
+</body>
+</html>
