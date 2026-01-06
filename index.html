@@ -571,7 +571,7 @@ p {
     <input type="range" class="volume-slider" id="volumeSlider" min="0" max="100" value="50">
   </div>
   <div class="song-info">
-    <span id="currentSong">Nueva York blessed</span>
+    <span id="currentSong">ONEFOUR & Nemzzz - SPINNIN</span>
   </div>
 </div>
 
@@ -597,8 +597,8 @@ p {
     </div>
   </div>
   
-  <h1>Gzbriel_23</h1>
-  <p>Content Creator & Developer</p>
+  <h1>👹 Gzbriel_23</h1>
+  <p>Pensando en tu culo 🤷‍♂️</p>
   
   <button class="btn discord" id="discordBtn" aria-label="Join Discord">
     <span class="material-icons" aria-hidden="true">diversity_3</span>
@@ -648,26 +648,27 @@ let views = 0;
 let onlineMembers = 0;
 let loadingInterval = null;
 
-// Discord Server ID
+// Discord Server ID y API URL
 const DISCORD_SERVER_ID = "1449237072048160831";
+const DISCORD_WIDGET_URL = "https://discord.com/api/guilds/1449237072048160831/widget.json";
 
 // ===== FUNCIONES DE ESTADÍSTICAS =====
 function loadStats() {
   console.log("📊 Cargando estadísticas...");
   
   try {
-    // Cargar visitas desde localStorage
-    let storedViews = localStorage.getItem('globalViews');
-    views = storedViews ? parseInt(storedViews) : 0;
-    
-    // Intentar obtener miembros online de Discord
-    fetchDiscordMembers();
+    // RESET DE VISITAS: Cambiar a 0 siempre
+    views = 0;
+    localStorage.setItem('globalViews', '0');
     
     // Mostrar valores inmediatamente
     viewCount.textContent = formatNumber(views);
     onlineCount.textContent = "0";
     
     console.log("📊 Estadísticas cargadas:", { views });
+    
+    // Obtener miembros online reales de Discord
+    fetchDiscordMembers();
     
   } catch (error) {
     console.error("Error cargando estadísticas:", error);
@@ -678,38 +679,79 @@ function loadStats() {
   }
 }
 
-// Función para obtener miembros online de Discord
+// Función para obtener miembros online REALES de Discord usando Widget API
 async function fetchDiscordMembers() {
   try {
-    console.log("🔄 Intentando obtener miembros de Discord...");
+    console.log("🔄 Obteniendo miembros REALES de Discord...");
     
-    // Usamos un proxy público para evitar problemas CORS
-    const response = await fetch(`https://api.lanyard.rest/v1/users/${DISCORD_SERVER_ID}`);
+    // Usar la API de widgets de Discord para obtener datos reales
+    const response = await fetch(DISCORD_WIDGET_URL);
     
     if (response.ok) {
       const data = await response.json();
-      console.log("✅ Datos de Discord:", data);
+      console.log("✅ Datos REALES de Discord Widget:", data);
       
-      // Simular miembros online (en producción necesitarías una API real)
-      onlineMembers = Math.floor(Math.random() * 50) + 10; // Número aleatorio entre 10-60
+      // Verificar si hay miembros en el widget
+      if (data.members && Array.isArray(data.members)) {
+        // Contar miembros únicos que están online
+        const uniqueMembers = [];
+        data.members.forEach(member => {
+          if (member.status === 'online' || member.status === 'idle' || member.status === 'dnd') {
+            // Evitar duplicados
+            if (!uniqueMembers.includes(member.id)) {
+              uniqueMembers.push(member.id);
+            }
+          }
+        });
+        
+        onlineMembers = uniqueMembers.length;
+        console.log(`✅ Miembros online reales: ${onlineMembers}`);
+        
+        // Actualizar contador con animación
+        animateOnlineCounter(onlineMembers);
+        
+      } else {
+        console.warn("⚠️ No se encontraron miembros en el widget");
+        onlineMembers = 0;
+        onlineCount.textContent = "0";
+      }
       
     } else {
-      // Si falla la API, usar valor por defecto
-      console.log("⚠️ API de Discord no disponible, usando valor simulado");
-      onlineMembers = Math.floor(Math.random() * 50) + 10;
+      console.warn("⚠️ No se pudo obtener el widget de Discord (status:", response.status, ")");
+      onlineMembers = 0;
+      onlineCount.textContent = "0";
     }
     
   } catch (error) {
     console.error("❌ Error obteniendo miembros de Discord:", error);
-    // Valor por defecto si hay error
-    onlineMembers = Math.floor(Math.random() * 30) + 5;
+    onlineMembers = 0;
+    onlineCount.textContent = "0";
   }
-  
-  // Actualizar contador
-  onlineCount.textContent = formatNumber(onlineMembers);
 }
 
+// Función para animar el contador de miembros online
+function animateOnlineCounter(target) {
+  const current = parseInt(onlineCount.textContent) || 0;
+  if (current === target) return;
+  
+  const increment = target > current ? 1 : -1;
+  const stepTime = 50; // Más rápido
+  let value = current;
+  
+  const timer = setInterval(() => {
+    value += increment;
+    onlineCount.textContent = formatNumber(value);
+    
+    if (value === target) {
+      clearInterval(timer);
+      console.log(`✅ Contador actualizado a: ${target} miembros`);
+    }
+  }, stepTime);
+}
+
+// Función para incrementar visitas (ahora siempre empieza en 0)
 function saveViews() {
+  // Siempre incrementar desde 0
   views++;
   try {
     localStorage.setItem('globalViews', views.toString());
@@ -765,7 +807,7 @@ function completeLoading() {
     setTimeout(() => {
       loader.style.display = 'none';
       main.classList.add('show');
-      showNotification(`👋 ¡Bienvenido! ${formatNumber(views)} visitas`, 'info');
+      showNotification(`👋 ¡Bienvenido! Visita ${formatNumber(views)}`, 'info');
     }, 800);
   }, 500);
 }
@@ -1058,36 +1100,29 @@ document.addEventListener('click', function initAudioOnce() {
   document.removeEventListener('click', initAudioOnce);
 }, { once: true });
 
-// Actualizar miembros online cada 30 segundos
+// Actualizar miembros online cada 60 segundos
 setInterval(() => {
+  console.log("🔄 Actualizando miembros online...");
   fetchDiscordMembers();
-}, 30000);
+}, 60000);
 
-// Función para simular animación de contador de Discord
-function animateOnlineCounter(target) {
-  const current = parseInt(onlineCount.textContent) || 0;
-  if (current === target) return;
-  
-  const increment = target > current ? 1 : -1;
-  const stepTime = 30;
-  let value = current;
-  
-  const timer = setInterval(() => {
-    value += increment;
-    onlineCount.textContent = formatNumber(value);
-    
-    if (value === target) {
-      clearInterval(timer);
-    }
-  }, stepTime);
+// Función para forzar actualización manual (puedes añadir un botón si quieres)
+function forceUpdateDiscordStats() {
+  showNotification("🔄 Actualizando estadísticas de Discord...", "info");
+  fetchDiscordMembers();
 }
 
-// Inicializar contador de Discord después de cargar
+// Exponer función global para depuración
+window.updateDiscordStats = forceUpdateDiscordStats;
+
+// Asegurar que la carga siempre termine (fallback)
 setTimeout(() => {
-  if (onlineMembers > 0) {
-    animateOnlineCounter(onlineMembers);
+  if (loadProgress < 100 && loadingInterval) {
+    console.log("⚠️ Forzando finalización de carga...");
+    clearInterval(loadingInterval);
+    completeLoading();
   }
-}, 1500);
+}, 5000); // 5 segundos máximo
 </script>
 </body>
 </html>
